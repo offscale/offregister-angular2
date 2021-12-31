@@ -5,17 +5,16 @@ if version[0] == "2":
 
 else:
     from io import StringIO
+
 from distutils.sysconfig import get_python_lib
 from os import path
 
-from offregister_nginx.ubuntu import setup_nginx_conf2 as _setup_nginx_conf2
-from offutils import update_d, validate_conf, EmptyGet
-
-from fabric.operations import sudo, run, put, get, env
-from fabric.contrib.files import append, upload_template, exists, cd, sed, shell_env
-
-from offregister_fab_utils.apt import apt_depends, get_pretty_name
+from fabric.contrib.files import cd, exists, shell_env
+from fabric.operations import env, get, put, run
+from offregister_fab_utils.apt import apt_depends
 from offregister_fab_utils.git import clone_or_update
+from offregister_nginx.ubuntu import setup_nginx_conf2 as _setup_nginx_conf2
+from offutils import validate_conf
 
 
 def install_nodejs0(*args, **kwargs):
