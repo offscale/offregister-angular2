@@ -9,8 +9,8 @@ else:
 from distutils.sysconfig import get_python_lib
 from os import path
 
-from fabric.contrib.files import cd, exists, shell_env
-from fabric.operations import env, get, put, run
+from fabric.contrib.files import exists, shell_env
+from fabric.operations import env
 from offregister_fab_utils.apt import apt_depends
 from offregister_fab_utils.git import clone_or_update
 from offregister_nginx.ubuntu import setup_nginx_conf2 as _setup_nginx_conf2
@@ -18,29 +18,32 @@ from offutils import validate_conf
 
 
 def install_nodejs0(*args, **kwargs):
-    apt_depends("ca-certificates", "curl")
-    run("mkdir -p $HOME/Downloads")
-    if not exists("$HOME/n"):
+    apt_depends(c, "ca-certificates", "curl")
+    c.run("mkdir -p $HOME/Downloads")
+    if not exists(c, runner=c.run, path="$HOME/n"):
         remote_loc = "$HOME/Downloads/n-install"
-        run(
+        c.run(
             "curl -L https://git.io/n-install -o {remote_loc}".format(
                 remote_loc=remote_loc
             )
         )
-        run("bash {remote_loc}".format(remote_loc=remote_loc))
+        c.run("bash {remote_loc}".format(remote_loc=remote_loc))
 
     env.shell = "/bin/bash -l -i -c"  # Damn, this is global. TODO: find an alternative
-    if run(
-        """
+    if (
+        c.run(
+            """
     curl -s https://nodejs.org/dist/latest/ \
     | sed -n 's:.*<a href=\".*\">node-v\(.*\).pkg</a>.*:\\1:p' \
     | grep -- "$(ls $HOME/n/n/versions/node)"
     """,
-        warn_only=True,
-    ).failed:
-        run("n latest")
+            warn=True,
+        ).exited
+        != 0
+    ):
+        c.run("n latest")
 
-    run("npm install -g webpack")
+    c.run("npm install -g webpack")
 
 
 def _get_repo_name(kwargs):
@@ -92,8 +95,8 @@ def _start_node2(*args, **kwargs):
     server_dir = _get_server_dir(**kwargs)
 
     # Don't use this in production! - Build a dist and deploy that
-    with cd(server_dir), shell_env(SOCK_URL=kwargs["SERVER_LOCATION"]):
-        run("npm i")
+    with c.cd(server_dir), shell_env(SOCK_URL=kwargs["SERVER_LOCATION"]):
+        c.run("npm i")
         # "app.set('SOCK_URL', undefined);", "app.set('SOCK_URL', '{SERVER_LOCATION}');"
         """
         sed('src/server.ts', ', undefined', ', "{SERVER_LOCATION}"'.format(
@@ -107,7 +110,7 @@ def _start_node2(*args, **kwargs):
 
         src = "src/server.ts"
         sio = StringIO()
-        get(src, sio, use_sudo=True)
+        c.get(src, sio, use_sudo=True)
         s = sio.read()
         s.replace(
             "app.set('SOCK_URL', undefined);",
@@ -116,8 +119,8 @@ def _start_node2(*args, **kwargs):
             ),
         )
         sio = StringIO(s)
-        put(sio, src, use_sudo=True)
-        run("npm start")
+        c.put(sio, src, use_sudo=True)
+        c.run("npm start")
 
 
 @_validate
