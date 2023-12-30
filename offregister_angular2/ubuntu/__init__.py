@@ -6,7 +6,6 @@ if version[0] == "2":
 else:
     from io import StringIO
 
-from distutils.sysconfig import get_python_lib
 from os import path
 
 from fabric.contrib.files import exists, shell_env
@@ -17,7 +16,7 @@ from offregister_nginx.ubuntu import setup_nginx_conf2 as _setup_nginx_conf2
 from offutils import validate_conf
 
 
-def install_nodejs0(*args, **kwargs):
+def install_nodejs0(c, *args, **kwargs):
     apt_depends(c, "ca-certificates", "curl")
     c.run("mkdir -p $HOME/Downloads")
     if not exists(c, runner=c.run, path="$HOME/n"):
@@ -80,7 +79,7 @@ def _validate(f):
 
 
 @_validate
-def git_static1(*args, **kwargs):
+def git_static1(c, *args, **kwargs):
     server_dir = _get_server_dir(**kwargs)
     clone_or_update(
         repo=kwargs["GIT_REPO"],
@@ -91,7 +90,7 @@ def git_static1(*args, **kwargs):
 
 
 @_validate
-def _start_node2(*args, **kwargs):
+def _start_node2(c, *args, **kwargs):
     server_dir = _get_server_dir(**kwargs)
 
     # Don't use this in production! - Build a dist and deploy that
@@ -124,7 +123,7 @@ def _start_node2(*args, **kwargs):
 
 
 @_validate
-def setup_nginx_conf2(*args, **kwargs):
+def setup_nginx_conf2(c, *args, **kwargs):
     server_dir = _get_server_dir(**kwargs)
     _setup_nginx_conf2(
         #
